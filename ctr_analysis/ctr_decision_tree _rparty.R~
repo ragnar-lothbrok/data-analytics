@@ -12,6 +12,8 @@ library(car)
 library(lattice)
 library(ggplot2)
 library(caret)
+library(rpart)
+library(party)
 
 CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/aa")
 
@@ -34,8 +36,10 @@ partiontioned_data <- createDataPartition(y=CTR_SD_Data$click,p = 0.7,list = FAL
 training <- CTR_SD_Data[partiontioned_data,]
 testing <- CTR_SD_Data[-partiontioned_data,]
 
-linear <- lm(training$click~., data = training)
+linear <- ctree(training$click~., data = training)
 
+printcp(linear) # display the results
+plotcp(linear) # visualize cross-validation results
 #will provide basic details about model F-statistics of the significance test with the summary function
 summary(linear)
 
@@ -44,13 +48,10 @@ predicted= predict(linear,testing)
 
 predicted_class = factor(ifelse(test=predicted > 0.7, yes = 1, no = 0))
 
-result <- table(testing$click,predicted_class)
+length(predicted)
+length(testing$click)
 
-error_p <- (result[2] + result[3]) / (result[1]+result[2]+result[3]+result[4]) * 100
-print(error_p)
-
-accuracy_p <- (result[1] + result[4]) / (result[1]+result[2]+result[3]+result[4]) * 100
-print(accuracy_p)
+table(testing$click, predicted_class)
 
 #======================================================================================
 #Keeping significant columns
@@ -61,7 +62,7 @@ testing <- CTR_SD_Data[-partiontioned_data,c("id","click","C1","banner_pos","sit
 #na.omit(training)
 #na.omit(testing)
 
-linear <- lm(formula = training$click~id+C1+banner_pos+site_id+site_domain+site_category+app_id+app_domain+app_category+device_model+device_type+device_conn_type+C14+C16+C17+C18+C19+C20+C21, data = training,na.action = na.exclude)
+linear <- ctree(formula = training$click~id+C1+banner_pos+site_id+site_domain+site_category+app_id+app_domain+app_category+device_model+device_type+device_conn_type+C14+C16+C17+C18+C19+C20+C21, data = training)
 
 #will provide basic details about model F-statistics of the significance test with the summary function
 summary(linear)
@@ -79,13 +80,13 @@ predicted_class = factor(ifelse(test=predicted > 0.5, yes = 1, no = 0))
 length(predicted_class)
 length(testing$click)
 
-result <- table(testing$click,predicted_class)
-
-error_p <- (result[2] + result[3]) / (result[1]+result[2]+result[3]+result[4]) * 100
-print(error_p)
-
-accuracy_p <- (result[1] + result[4]) / (result[1]+result[2]+result[3]+result[4]) * 100
-print(accuracy_p)
+table(testing$click, predicted_class)
 
 multicollinearity_matrix = cor(training)
 View(multicollinearity_matrix)
+
+#plot(training$app_domain,training$click)
+#cor(training$click,training$app_domain)
+#cov(training$click,training$app_domain)
+#abline(linear)
+

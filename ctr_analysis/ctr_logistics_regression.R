@@ -34,7 +34,7 @@ partiontioned_data <- createDataPartition(y=CTR_SD_Data$click,p = 0.7,list = FAL
 training <- CTR_SD_Data[partiontioned_data,]
 testing <- CTR_SD_Data[-partiontioned_data,]
 
-linear <- lm(training$click~., data = training)
+linear <- glm(training$click~., data = training,family='binomial')
 
 #will provide basic details about model F-statistics of the significance test with the summary function
 summary(linear)
@@ -61,7 +61,7 @@ testing <- CTR_SD_Data[-partiontioned_data,c("id","click","C1","banner_pos","sit
 #na.omit(training)
 #na.omit(testing)
 
-linear <- lm(formula = training$click~id+C1+banner_pos+site_id+site_domain+site_category+app_id+app_domain+app_category+device_model+device_type+device_conn_type+C14+C16+C17+C18+C19+C20+C21, data = training,na.action = na.exclude)
+linear <- glm(formula = training$click~id+C1+banner_pos+site_id+site_domain+site_category+app_id+app_domain+app_category+device_model+device_type+device_conn_type+C14+C16+C17+C18+C19+C20+C21, data = training,na.action = na.exclude,family='binomial')
 
 #will provide basic details about model F-statistics of the significance test with the summary function
 summary(linear)
@@ -89,3 +89,8 @@ print(accuracy_p)
 
 multicollinearity_matrix = cor(training)
 View(multicollinearity_matrix)
+
+#plot(training$app_domain,training$click)
+#cor(training$click,training$app_domain)
+#cov(training$click,training$app_domain)
+#abline(linear)
