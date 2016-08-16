@@ -9,7 +9,7 @@ library(car)
 library(IDPmisc)
 
 set.seed(100)
-CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/splitaa")
+CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/aaaa")
 
 #Convert categorical values to numeric
 CTR_SD_Data$site_id             = as.numeric(CTR_SD_Data$site_id)
