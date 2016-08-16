@@ -6,6 +6,7 @@ library(readr)
 library(stringr)
 library(caret)
 library(car)
+library(IDPmisc)
 
 set.seed(100)
 CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/splitaa")
@@ -27,15 +28,19 @@ train_rows = sample(x=rows, size=(0.7 * nrow(CTR_SD_Data))) #selecting 70% rando
 
 #Getting training data i.e. selecting all rows that we had randomly selected from rows
 training = CTR_SD_Data[train_rows,]
+training[complete.cases(training), ]
+NaRV.omit(training)
 
 #Getting TEST data i.e. all rows not mentioned in train rows
 testing = CTR_SD_Data[-train_rows,]
+testing[complete.cases(testing), ]
+NaRV.omit(testing)
 
 param       = list("objective" = "multi:softmax", # multi class classification
                    "num_class"= 2 ,  		# Number of classes in the dependent variable.
                    "eval_metric" = "mlogloss",  	 # evaluation metric 
                    "nthread" = 8,   			 # number of threads to be used 
-                   "max_depth" = 16,    		 # maximum depth of tree 
+                   "max_depth" = 6,    		 # maximum depth of tree 
                    "eta" = 0.3,    			 # step size shrinkage 
                    "gamma" = 0,    			 # minimum loss reduction 
                    "subsample" = 0.7,    		 # part of data instances to grow tree 
@@ -48,13 +53,14 @@ predictors = colnames(training[-2])
 #Alas, xgboost works only if the numeric labels
 set.seed(100)
 
-cv.nround = 200;  # Number of rounds. This can be set to a lower or higher value, if you wish, example: 150 or 250 or 300  
+cv.nround = 20;  # Number of rounds. This can be set to a lower or higher value, if you wish, example: 150 or 250 or 300  
 bst.cv = xgb.cv(
   param=param,
   data = as.matrix(training[,predictors]),
   label = training$click,
   nfold = 3,
   nrounds=cv.nround,
+  missing='NAN',
   prediction=T)
 
 min.loss.idx = which.min(bst.cv$dt[, test.mlogloss.mean]) 
@@ -71,7 +77,10 @@ bst = xgboost(
   param=param,
   data =as.matrix(training[,predictors]),
   label = training$click,
+  missing = 'NAN',
   nrounds=min.loss.idx)
+
+na.omit(training[,predictors])
 
 # Make prediction on the testing data.
 prediction_click = predict(bst, as.matrix(testing[,predictors]))
@@ -80,8 +89,31 @@ prediction_click = predict(bst, as.matrix(testing[,predictors]))
 prediction_click = ifelse(prediction_click == 0,0,1)
 
 #Compute the accuracy of predictions.
-confusionMatrix( prediction_click ,testing$click)
+confusionMatrix <- table( prediction_click ,testing$click)
 
-confusionMatrix
+# TP + TN / FP + FN
+accuracry = sum(diag(confusionMatrix))/sum(confusionMatrix) * 100;
+accuracry
+
+#Precision : proportion of predicted positive test cases which is true TP / (TP+FP)
+precision = confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2]);
+precision
+
+# Sensitivity Recall : proportion of predicted positive test cases / actual postive test cases TP / (TP + FN) or true positive rate
+recall = confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]);
+recall
+
+#Spcecificity TN / (TN + FP)
+s <- confusionMatrix[1,1] / (confusionMatrix[1,2] + confusionMatrix[1,2])
+s
+
+#False positive rate : predicted +ve said amongst actual negative test case
+fpr = confusionMatrix[1,2] / (confusionMatrix[1,1] + confusionMatrix[1,2]);
+fpr
+
+#F = 2PR / P + R
+f <- (2*(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]))*(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2]))) / ((confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]))+(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2])))
+f
 
 #======================================================================================
+
