@@ -15,7 +15,7 @@ library(ggplot2)
 library(caret)
 library("klaR")
 
-CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/sub-splitaa")
+CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/sub-testtaa")
 #Vector to numeric converion Gives the datatype of each column
 str(CTR_SD_Data)
 

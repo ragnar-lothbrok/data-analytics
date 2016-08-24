@@ -15,7 +15,7 @@ library(caret)
 library(rpart)
 library(party)
 
-CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/aa")
+CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/sub-testtaa")
 
 #Vector to numeric converion Gives the datatype of each column
 str(CTR_SD_Data)
@@ -80,7 +80,33 @@ predicted_class = factor(ifelse(test=predicted > 0.5, yes = 1, no = 0))
 length(predicted_class)
 length(testing$click)
 
-table(testing$click, predicted_class)
+#Calculate accuracy, precision, recall
+confusionMatrix = table(testing$click, predicted_class)
+confusionMatrix
+
+# TP + TN / FP + FN
+accuracry = sum(diag(confusionMatrix))/sum(confusionMatrix) * 100;
+accuracry
+
+#Precision : proportion of predicted positive test cases which is true TP / (TP+FP)
+precision = confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2]);
+precision
+
+# Sensitivity Recall : proportion of predicted positive test cases / actual postive test cases TP / (TP + FN) or true positive rate
+recall = confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]);
+recall
+
+#Spcecificity TN / (TN + FP)
+s <- confusionMatrix[1,1] / (confusionMatrix[1,2] + confusionMatrix[1,2])
+s
+
+#False positive rate : predicted +ve said amongst actual negative test case
+fpr = confusionMatrix[1,2] / (confusionMatrix[1,1] + confusionMatrix[1,2]);
+fpr
+
+#F = 2PR / P + R
+f <- (2*(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]))*(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2]))) / ((confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[2,1]))+(confusionMatrix[2,2] / (confusionMatrix[2,2] + confusionMatrix[1,2])))
+f
 
 multicollinearity_matrix = cor(training)
 View(multicollinearity_matrix)

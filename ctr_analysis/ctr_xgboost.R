@@ -7,9 +7,10 @@ library(stringr)
 library(caret)
 library(car)
 library(IDPmisc)
+library(mlbench)
 
 set.seed(100)
-CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/aaaa")
+CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/sub-testtaa")
 
 #Convert categorical values to numeric
 CTR_SD_Data$site_id             = as.numeric(CTR_SD_Data$site_id)
@@ -21,6 +22,36 @@ CTR_SD_Data$app_category        = as.numeric(CTR_SD_Data$app_category)
 CTR_SD_Data$device_id           = as.numeric(CTR_SD_Data$device_id)
 CTR_SD_Data$device_ip           = as.numeric(CTR_SD_Data$device_ip)
 CTR_SD_Data$device_model        = as.numeric(CTR_SD_Data$device_model)
+
+# calculate correlation matrix
+correlationMatrix <- cor(CTR_SD_Data[,-3],use="pairwise.complete.obs")
+NaRV.omit(correlationMatrix)
+# summarize the correlation matrix
+print(correlationMatrix)
+
+# find attributes that are highly corrected (ideally >0.75)
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.5)
+# print indexes of highly correlated attributes
+print(highlyCorrelated)
+colnames(CTR_SD_Data)
+
+
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+# run the RFE algorithm
+results <- rfe(CTR_SD_Data[,3:24], CTR_SD_Data[,2], sizes=c(3:24), rfeControl=control)
+# summarize the results
+print(results)
+# list the chosen features
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+
+
+
+
+
+
 
 #Split the data in training and test data
 rows = seq(from=1,to=nrow(CTR_SD_Data), by = 1)
@@ -40,12 +71,12 @@ param       = list("objective" = "multi:softmax", # multi class classification
                    "num_class"= 2 ,  		# Number of classes in the dependent variable.
                    "eval_metric" = "mlogloss",  	 # evaluation metric 
                    "nthread" = 8,   			 # number of threads to be used 
-                   "max_depth" = 6,    		 # maximum depth of tree 
-                   "eta" = 0.3,    			 # step size shrinkage 
+                   "max_depth" = 9,    		 # maximum depth of tree 
+                   "eta" = 0.18,    			 # step size shrinkage 
                    "gamma" = 0,    			 # minimum loss reduction 
                    "subsample" = 0.7,    		 # part of data instances to grow tree 
                    "colsample_bytree" = 1, 		 # subsample ratio of columns when constructing each tree 
-                   "min_child_weight" = 12  		 # minimum sum of instance weight needed in a child 
+                   "min_child_weight" = 1		 # minimum sum of instance weight needed in a child 
 )
 
 
@@ -53,7 +84,7 @@ predictors = colnames(training[-2])
 #Alas, xgboost works only if the numeric labels
 set.seed(100)
 
-cv.nround = 20;  # Number of rounds. This can be set to a lower or higher value, if you wish, example: 150 or 250 or 300  
+cv.nround = 500;  # Number of rounds. This can be set to a lower or higher value, if you wish, example: 150 or 250 or 300  
 bst.cv = xgb.cv(
   param=param,
   data = as.matrix(training[,predictors]),
@@ -83,13 +114,13 @@ bst = xgboost(
 na.omit(training[,predictors])
 
 # Make prediction on the testing data.
-prediction_click = predict(bst, as.matrix(testing[,predictors]))
+prediction_click = predict(bst, as.matrix(training[,predictors]))
 
 #Translate the prediction to the original class or Species.
 prediction_click = ifelse(prediction_click == 0,0,1)
 
 #Compute the accuracy of predictions.
-confusionMatrix <- table( prediction_click ,testing$click)
+confusionMatrix <- table( prediction_click ,training$click)
 
 # TP + TN / FP + FN
 accuracry = sum(diag(confusionMatrix))/sum(confusionMatrix) * 100;
