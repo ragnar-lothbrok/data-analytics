@@ -1,6 +1,7 @@
 #Remove all env variables
 rm(list = ls(all.names = T))
 #Load the data from packages
+install.packages("ggvis")
 library(xgboost)
 library(readr)
 library(stringr)
@@ -8,9 +9,12 @@ library(caret)
 library(car)
 library(IDPmisc)
 library(mlbench)
+library(ggvis)
 
 set.seed(100)
 CTR_SD_Data <- read.csv("/home/raghunandangupta/Downloads/splits/sub-testtaa")
+
+CTR_SD_Data %>% ggvis(~id, ~site_id, fill = ~click) %>% layer_points()
 
 #Convert categorical values to numeric
 CTR_SD_Data$site_id             = as.numeric(CTR_SD_Data$site_id)
